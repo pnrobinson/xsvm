@@ -1,0 +1,8 @@
+XSVM: README
+
+Compiling the xsvm documentation and executable:
+$ make xsvm.pdf
+$ make xsvm
+
+Install emacs web-mode
+See http://tex.loria.fr/litte/webm-man.pdf
