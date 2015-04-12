@@ -20,11 +20,10 @@ push:
 
 
 ## unit testing with GLIB
-GLIBI=`pkg-config --cflags glib-2.0`
-GLIBL=`pkg-config --libs glib-2.0`
+GL=`pkg-config --cflags --libs gmodule-2.0`
+
 test: test_xsvm.c $(OBJ)
-	#echo $(GLIBI)
-	$(CC) -I/usr/include/glib-2.0 -I/usr/lib/x86_64-linux-gnu/glib-2.0/include $(LDFLAGS) -lglib-2.0  -o $@ test_xsvm.c $(OBJ)
+	$(CC) test_xsvm.c $(OBJ) $(LDFLAGS) $(GL) -o $@ 
 
 
 
@@ -36,3 +35,6 @@ doc:
 clean:
 	-rm xsvm
 	-rm *.o
+	-rm *~
+	-rm -rf html
+	-rm -rf latex
