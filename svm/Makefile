@@ -2,15 +2,8 @@ CFLAGS = -g -Wall -O3
 LDLIBS=
 CC=c99
 
-all: xsvm.pdf
+all: xsvm
 
-xsvm.pdf: xsvm.w
-	cweave xsvm.w
-	pdftex xsvm.tex
-
-
-xsvm.c: xsvm.w
-	ctangle xsvm.w
 
 
 xsvm: xsvm.c
@@ -22,3 +15,7 @@ push:
 	@test "x$(MSG)" != 'x'
 	git commit -am"$(MSG)"
 	git push
+
+## doxygen
+doc:
+	doxygen doxygen.cfg
