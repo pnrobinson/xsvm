@@ -11,7 +11,7 @@
 #define SVM_H_
 
 #include "stdio.h"
-
+#include "svm_util.h"
 
 typedef struct gram_mat {
   unsigned int n; /**< Number of data points */
@@ -103,7 +103,9 @@ void output_bound_vs_unbound_supports(struct svm *svm, FILE* fp);
 void calculate_diagnostics(struct svm *svm);
 
 
-GRAM_MATRIX * initialize_gram_matrix(unsigned int n);
-
+GRAM_MATRIX * calculate_gram_matrix(unsigned int n,
+				    FVECTOR **feature_vector_list,
+				    KERNEL_PARAM *kernel_parameters);
+double kernel_function(KERNEL_PARAM *k_params, FVECTOR *a, FVECTOR *b);
 
 #endif /* SVM_H_ */

@@ -1,5 +1,6 @@
 CFLAGS = -g -Wall -O3
-LDLIBS=
+LDLIBS= 
+LDFLAGS=-lm 
 CC=c99
 
 all: xsvm
@@ -7,9 +8,10 @@ all: xsvm
 OBJ = svm_util.o svm.o
 
 xsvm: xsvm.c $(OBJ)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ xsvm.c $(OBJ)
+	$(CC) -o $@ xsvm.c $(OBJ) $(CFLAGS) $(LDFLAGS)
 
-
+%.o : %.c
+	$(CC) -c $(CFLAGS) $(LDFLAGS)  $< -o $@
 
 ## github stuff
 push:

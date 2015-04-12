@@ -123,3 +123,33 @@ FVECTOR *create_feature_vector(FEATURE *features,double label,double factor)
   vec->factor=factor;
   return(vec);
 }
+
+
+/** \brief Compute the inner product of two sparse vectors.
+ * Compute the dot product of two sparse vectors. Note that 
+ * the indices of the vectors must be in ascending order. This
+ * allows us to increment the features of a or b until we get to features
+ * that match.
+ */
+double sparse_dotproduct(FVECTOR *a, FVECTOR *b) 
+{
+    register double sum=0;
+    register FEATURE *ai,*bj;
+    ai=a->features;
+    bj=b->features;
+    while (ai->fnum && bj->fnum) {
+      if(ai->fnum > bj->fnum) {
+	bj++;
+      }
+      else if (ai->fnum < bj->fnum) {
+	ai++;
+      }
+      else {
+	sum+=(ai->fval) * (bj->fval);
+	ai++;
+	bj++;
+      }
+    }
+    return((double)sum);
+}
+

@@ -22,7 +22,7 @@ char training_data_file[200];
 char model_file[200];
 
 void input_arguments(int argc,char *argv[],char *docfile,char *modelfile,
-		     int *verbosity);
+		     int *verbosity, KERNEL_PARAM *kernel_parameters);
 void print_help();
 void read_training_data(char *trainfile, FVECTOR ***fvecs, 
 		    unsigned long *n_features, unsigned long *n_fvecs);
@@ -33,13 +33,16 @@ int main(int argc,char ** argv) {
   FVECTOR **feature_vector_list; /* the training data */
   unsigned long total_features;
   unsigned long total_feature_vectors;
+  KERNEL_PARAM kernel_parameters;
   GRAM_MATRIX *gram;
  
   printf("xsvm\n");
-  input_arguments(argc,argv,training_data_file,model_file,&verbosity);
+  input_arguments(argc,argv,training_data_file,model_file,&verbosity, &kernel_parameters);
   read_training_data(training_data_file,&feature_vector_list,&total_features,
 		     &total_feature_vectors);
-  gram = initialize_gram_matrix(total_feature_vectors);
+  // For now, let us use a Euclidean kernel
+  gram = calculate_gram_matrix(total_feature_vectors,feature_vector_list,&kernel_parameters);
+
   return 0;
 }
 
@@ -223,13 +226,17 @@ int parse_line(char *line, FEATURE *features, double *label,
  * Input the arguments from the command line.
  * TODO: Need to extend for testing and custom kernel as well
  */
-void input_arguments(int argc,char *argv[],char *trainingfile,char *modelfile,
-			  int *verbosity)
+void input_arguments(int argc,char *argv[],
+		     char *trainingfile,
+		     char *modelfile,
+		     int *verbosity,
+		     KERNEL_PARAM *kernel_parameters)
 {
   unsigned int i;
   /* default values for model file and verbosity level */
   strcpy (modelfile, "svm_model");
   (*verbosity)=1;
+  kernel_parameters->kernel_type=LINEAR;
   for(i=1;(i<argc) && ((argv[i])[0] == '-');i++) {
     switch ((argv[i])[1]) {
     case '?': print_help(); exit(0);

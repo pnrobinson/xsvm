@@ -79,7 +79,19 @@ typedef struct training_data {
 } TRAINING;
 
 /** verbosity level (0-4) */
-extern int verbosity;             
+extern int verbosity;   
+
+
+/** \brief Parameters for the type of kernel used.
+ */
+typedef struct kernel_parameters {
+  long    kernel_type;   /**< 0=linear, 1=poly, 2=rbf, 3=sigmoid, 4=custom */
+  long    poly_degree;
+  double  rbf_gamma;
+  double  coef_lin;
+  double  coef_const;
+  char    custom[50];    /* for user supplied kernel */
+} KERNEL_PARAM;          
 
 extern void input_training_data(const char *path, FVECTOR ***fvec_list, unsigned long *total_features, long int *total_fvecs);
 
@@ -90,6 +102,7 @@ extern void scan_n_lines_and_features(char *file,
 extern int space_or_null(int c);
 extern void *xmalloc(size_t size);
 extern FVECTOR *create_feature_vector(FEATURE *features,double label,double factor);
+extern double sparse_dotproduct(FVECTOR *a, FVECTOR *b);
 
 //extern *tranin
 
