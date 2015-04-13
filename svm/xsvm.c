@@ -28,6 +28,7 @@ void read_training_data(char *trainfile, FVECTOR ***fvecs,
 		    unsigned long *n_features, unsigned long *n_fvecs);
 int parse_line(char *line, FEATURE *features, double *label,
 	       long int *n_features, long int max_words_doc);
+void initialize_svm(SVM *svm, GRAM_MATRIX *gram, FVECTOR **fv_list);
 
 int main(int argc,char ** argv) {
   FVECTOR **feature_vector_list; /* the training data */
@@ -35,6 +36,7 @@ int main(int argc,char ** argv) {
   unsigned long total_feature_vectors;
   KERNEL_PARAM kernel_parameters;
   GRAM_MATRIX *gram;
+  SVM svm;
  
   printf("xsvm\n");
   input_arguments(argc,argv,training_data_file,model_file,&verbosity, &kernel_parameters);
@@ -42,8 +44,54 @@ int main(int argc,char ** argv) {
 		     &total_feature_vectors);
   // For now, let us use a Euclidean kernel
   gram = calculate_gram_matrix(total_feature_vectors,feature_vector_list,&kernel_parameters);
+  
+  initialize_svm(&svm, gram, feature_vector_list);
+  enum optimization opt_type=PLATT;
+  svm_train(&svm,opt_type);
 
   return 0;
+}
+
+
+void initialize_svm(SVM *svm, GRAM_MATRIX *gram, FVECTOR **fv_list)
+{
+  svm->data = gram->matrix;
+  unsigned int N = gram->n;
+  signed char *labels = xmalloc(N*sizeof(signed char));
+  for (unsigned int i=0;i<N;++i) {
+    if (fv_list[i]->data_class < 0)
+      labels[i] = (signed char)-1;
+    else if (fv_list[i]->data_class > 0)
+      labels[i] = (signed char)1;
+    else {
+      printf("Error, did not recognize data class for item %d: %f\n",i,fv_list[i]->data_class);
+      exit(1);
+    }
+  }
+  svm->data_class = labels;
+  svm->training_count = N;
+  svm->test_count = 0;
+  svm->end_support_i = N;
+  svm->kernel = 0;
+  double C=1.0d;
+  svm->C_neg = C;
+  svm->C_pos = C;
+  svm->output_file = "out_filename.txt";
+  int maxIter=100;
+  svm->max_iter = maxIter;
+  /*
+  if ( plausibility_check(&svm) < 0 ) {
+    fprintf(stderr,"Terminating program because of errors in SVM initialization\n");
+    exit(1);
+  }
+  */
+
+
+
+
+
+
+
 }
 
 

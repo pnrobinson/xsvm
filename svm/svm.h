@@ -18,7 +18,7 @@ typedef struct gram_mat {
   double **matrix;
 } GRAM_MATRIX;
 
-struct svm
+typedef struct svm
 {
   /* In general, data represents an nxn matrix of scores of kernel evalutions for the
    * (i,j) pair of training exemplars, i.e., the Gram matrix. In the
@@ -82,7 +82,7 @@ struct svm
   int test_FN;
   int test_TP;
   int test_TN;
-};
+} SVM;
 
 #define GET_C(svm,idx) ( (svm->data_class[idx] > 0 ? svm->C_pos : svm->C_neg) )
 
@@ -91,7 +91,7 @@ double objective_function(struct svm *svm);
 void calculate_bound_vs_unbound_supports(struct svm *svm, int *lb, int *ub, int *unb_sv);
 int plausibility_check(struct svm *svm);
 void free_svm(struct svm *svm);
-
+/** The two algorithms for solving the SVM */
 enum optimization { PLATT, FAN};
 
 void smo_train(struct svm *svm, enum optimization opt);
@@ -107,5 +107,15 @@ GRAM_MATRIX * calculate_gram_matrix(unsigned int n,
 				    FVECTOR **feature_vector_list,
 				    KERNEL_PARAM *kernel_parameters);
 double kernel_function(KERNEL_PARAM *k_params, FVECTOR *a, FVECTOR *b);
+
+
+
+void svm_train(struct svm *svm, enum optimization opt);
+
+double learned_func_nonlinear(struct svm *svm, int k, double b);
+double objective_function(struct svm *svm);
+void calculate_bound_vs_unbound_supports(struct svm *svm, int *lb, int *ub, int *unb_sv);
+int plausibility_check(struct svm *svm);
+void free_svm(struct svm *svm);
 
 #endif /* SVM_H_ */

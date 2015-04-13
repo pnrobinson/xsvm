@@ -5,7 +5,7 @@ CC=c99
 
 all: xsvm
 
-OBJ = svm_util.o svm.o
+OBJ = svm_util.o svm.o platt.o
 
 xsvm: xsvm.c $(OBJ)
 	$(CC) -o $@ xsvm.c $(OBJ) $(CFLAGS) $(LDFLAGS)
