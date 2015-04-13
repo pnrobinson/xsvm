@@ -53,6 +53,11 @@ int main(int argc,char ** argv) {
 }
 
 
+double dumbkernelfxn(int i1, int i2, SVM *svm) {
+  double** mat = (double**)svm->data;
+  return mat[i1][i2];
+}
+
 void initialize_svm(SVM *svm, GRAM_MATRIX *gram, FVECTOR **fv_list)
 {
   svm->data = gram->matrix;
@@ -72,7 +77,7 @@ void initialize_svm(SVM *svm, GRAM_MATRIX *gram, FVECTOR **fv_list)
   svm->training_count = N;
   svm->test_count = 0;
   svm->end_support_i = N;
-  svm->kernel = 0;
+  svm->kernel = dumbkernelfxn;
   double C=1.0d;
   svm->C_neg = C;
   svm->C_pos = C;

@@ -1,4 +1,4 @@
-/*
+/**
  * platt.c
  * There are several variations upon the Sequential Minimal Optimization 
  * (SMO) originally proposed by John Platt. In essence, the methods differ
@@ -38,16 +38,16 @@ static double delta_b;
 static int end_support_i = -1;
 
 
-/*******************************************************
- * This is the only public function in this module and *
- * coordinates the optimization scheme.
-********************************************************/
+/**
+ * \brief Optimize the SVM using the Sequential Minimal Optimization scheme.
+ * This is the only public function in this module 
+ */
 void train_model_platt(struct svm *svm)
 {
   int k, num_changed, examine_all;
   int iter,max_iter;
- 
-	/* initialize some file-scope variables */	
+  
+  /* initialize some file-scope variables */	
   C = svm->C;
   end_support_i = svm->training_count;
   
@@ -57,137 +57,133 @@ void train_model_platt(struct svm *svm)
   if (max_iter < 1) max_iter = 0x7fffffff;
   
   do
+  {
+    num_changed = 0;
+    
+    if (examine_all)
     {
-      num_changed = 0;
-      
-      if (examine_all)
-	{
-	  for (k = 0; k < svm->training_count; k++)
-	    num_changed += smo_examine_example(svm,k);
-	  examine_all = 0;
-	} else
-	{
-	  for (k = 0; k < svm->training_count; k++)
-	    {
-	      if (svm->alpha[k] != 0 && svm->alpha[k] != C)
-		num_changed += smo_examine_example(svm, k);
-	    }
-	  if (num_changed == 0) examine_all = 1;
-	}
-      
-#if VERBOSE
-      if (iter % MIN(100,svm->training_count) == 0){
-	fprintf(stderr,"iter=%d; number changed=%d\n",iter,num_changed);
-	svm->b = b;
-	calculate_diagnostics(svm);
-	fprintf(stderr,"train_err: %d/%d (TP:%d, TN:%d, FP:%d,FN:%d) test_err: %d/%d (TP:%d, TN:%d, FP:%d,FN:%d)\n",
-		svm->training_err_count,svm->training_count,svm->train_TP,svm->train_TN,svm->train_FP,svm->train_FN,
-		svm->test_err_count,svm->test_count,svm->test_TP,svm->test_TN,svm->test_FP,svm->test_FN);
-	output_bound_vs_unbound_supports(svm, stderr);
-	fprintf(stderr,"\n");
+      for (k = 0; k < svm->training_count; k++)
+	num_changed += smo_examine_example(svm,k);
+      examine_all = 0;
+    } else
+    {
+      for (k = 0; k < svm->training_count; k++)
+      {
+	if (svm->alpha[k] != 0 && svm->alpha[k] != C)
+	  num_changed += smo_examine_example(svm, k);
       }
+      if (num_changed == 0) examine_all = 1;
+    }
+    
+#if VERBOSE
+    if (iter % MIN(100,svm->training_count) == 0){
+      fprintf(stderr,"iter=%d; number changed=%d\n",iter,num_changed);
+      svm->b = b;
+      calculate_diagnostics(svm);
+      fprintf(stderr,"train_err: %d/%d (TP:%d, TN:%d, FP:%d,FN:%d) test_err: %d/%d (TP:%d, TN:%d, FP:%d,FN:%d)\n",
+	      svm->training_err_count,svm->training_count,svm->train_TP,svm->train_TN,svm->train_FP,svm->train_FN,
+	      svm->test_err_count,svm->test_count,svm->test_TP,svm->test_TN,svm->test_FP,svm->test_FN);
+      output_bound_vs_unbound_supports(svm, stderr);
+      fprintf(stderr,"\n");
+    }
 #endif
-
-		iter++;
-	} while ((num_changed > 0 || examine_all) && (iter<max_iter));
-	fprintf(stderr,"\n ***\nDONEDONE SMO-Platt Training iter=%d; number changed=%d\n",iter,num_changed);
-	svm->b = b;
-	
-	
+    
+    iter++;
+  } while ((num_changed > 0 || examine_all) && (iter<max_iter));
+  fprintf(stderr,"\n ***\nDONEDONE SMO-Platt Training iter=%d; number changed=%d\n",iter,num_changed);
+  svm->b = b;
 }
 
-/*******************************************************
-
-********************************************************/
+/**
+ * \brief Examine a single example.
+ * TODO better documentaiton
+ **/
 static int smo_examine_example(struct svm *svm, int i1)
 {
-	double y1, alph1, E1, r1;
-	double *alph = svm->alpha;
-	double *error_cache = svm->error_cache;
-
-	y1 = svm->data_class[i1];
-	alph1 = alph[i1];
-
-	if (alph1 > 0 && alph1 < C)
-		E1 = error_cache[i1];
-	else
-	  E1 = learned_func_nonlinear(svm,i1,b) - y1;
-
-	r1 = y1 * E1;
-	if ((r1 < -tolerance && alph1 < C) || (r1 > tolerance && alph1 > 0))
+  double y1, alph1, E1, r1;
+  double *alph = svm->alpha;
+  double *error_cache = svm->error_cache;
+  
+  y1 = svm->data_class[i1];
+  alph1 = alph[i1];
+  
+  if (alph1 > 0 && alph1 < C)
+    E1 = error_cache[i1];
+  else
+    E1 = learned_func_nonlinear(svm,i1,b) - y1;
+  
+  r1 = y1 * E1;
+  if ((r1 < -tolerance && alph1 < C) || (r1 > tolerance && alph1 > 0))
+  {
+    /* Try i2 by three ways; if successful, then immediately return 1; */
+    
+    /* 1) Try the pair with maximum |E1 - E2| */
+    {
+      int k, i2;
+      double tmax;
+      
+      for (i2 = (-1), tmax = 0, k = 0; k < end_support_i; k++)
+      {
+	if (alph[k] > 0 && alph[k] < C)
 	{
-		/* Try i2 by three ways; if successful, then immediately return 1; */
-
-/* 1) Try the pair with maximum |E1 - E2| */
-		{
-			int k, i2;
-			double tmax;
-
-			for (i2 = (-1), tmax = 0, k = 0; k < end_support_i; k++)
-			{
-				if (alph[k] > 0 && alph[k] < C)
-				{
-					double E2, temp;
-
-					E2 = error_cache[k];
-					temp = fabs(E1 - E2);
-					if (temp > tmax)
-					{
-						tmax = temp;
-						i2 = k;
-					}
-				}
-			}
-
-			if (i2 >= 0)
-			{
-				if (takeStep(svm,i1, i2))
-					return 1;
-			}
-		}
-
-/* 2) try any other unbound example */
-		{
-			int k, k0;
-			int i2;
-
-			for (k0 = (int)(drand48() * end_support_i), k = k0;
-				 k < end_support_i + k0; k++)
-			{
-				i2 = k % end_support_i;
-				if (alph[i2] > 0 && alph[i2] < C)
-				{
-					if (takeStep(svm,i1, i2))
-						return 1;
-				}
-			}
-		}
-
-
-/* 3) Try any other example */
-
-		{
-			int k0, k, i2;
-
-			for (k0 = (int)(drand48() * end_support_i), k = k0;
-				 k < end_support_i + k0; k++)
-			{
-				i2 = k % end_support_i;
-				if (takeStep(svm,i1, i2))
-					return 1;
-			}
-		}
-
-
+	  double E2, temp;
+	  
+	  E2 = error_cache[k];
+	  temp = fabs(E1 - E2);
+	  if (temp > tmax)
+	  {
+	    tmax = temp;
+	    i2 = k;
+	  }
 	}
-
-	return 0;
+      }
+      
+      if (i2 >= 0)
+      {
+	if (takeStep(svm,i1, i2))
+	  return 1;
+      }
+    }
+    
+    /* 2) try any other unbound example */
+    {
+      int k, k0;
+      int i2;
+      
+      for (k0 = (int)(drand48() * end_support_i), k = k0;
+	   k < end_support_i + k0; k++)
+      {
+	i2 = k % end_support_i;
+	if (alph[i2] > 0 && alph[i2] < C)
+	{
+	  if (takeStep(svm,i1, i2))
+	    return 1;
+	}
+      }
+    }
+    
+    
+    /* 3) Try any other example */
+    
+    {
+      int k0, k, i2;
+      
+      for (k0 = (int)(drand48() * end_support_i), k = k0;
+	   k < end_support_i + k0; k++)
+      {
+	i2 = k % end_support_i;
+	if (takeStep(svm,i1, i2))
+	  return 1;
+      }
+    }
+  }
+  return 0;
 }
 
 
-/*******************************************************
-
-********************************************************/
+/**
+ * \brief TODO.
+ */
 static int takeStep(struct svm *svm, int i1, int i2)
 {
   int y1, y2, s;

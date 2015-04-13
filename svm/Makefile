@@ -40,3 +40,4 @@ clean:
 	-rm *~
 	-rm -rf html
 	-rm -rf latex
+	-rm test
