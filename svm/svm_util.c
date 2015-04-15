@@ -21,26 +21,31 @@ int verbosity;
 
 /* prototypes */
 
-
+/*
 void input_training_data(const char *path, FVECTOR ***fvec_list, unsigned long *total_features, long int *total_fvecs) {
 
-}
+}*/
 
 /** \brief Scan file to prepare for data input.
  *
  * Grep through file and count number of lines, maximum number of
  * spaces per line, and longest line. 
+ * @param file name (full path) to file with training data
+ * @param n_lines Pointer to variable that will receive the total number of lines of training data
+ * @param wol ?
+ * @param ll pointer to var that will get the longest line length (ll)
  */
 void scan_n_lines_and_features(char *file, 
-	    unsigned *n_lines, 
-	    unsigned *wol, 
-	    unsigned *ll) 
+			       unsigned *n_lines, 
+			       unsigned *wol, 
+			       unsigned *ll) 
 {
   FILE *fl;
-  int ic;
-  char c;
-  long current_length,current_wol;
-
+  int ic; /* int value returned from getc representing one char */
+  char c; /* current char value derived from 'ic' */
+  long current_length; /* length of the current line */
+  long current_wol; /* one more than the number of word on the line */
+  
   if ((fl = fopen (file, "r")) == NULL) { 
     perror (file); 
     exit (1); 
@@ -50,12 +55,17 @@ void scan_n_lines_and_features(char *file,
   (*ll)=0;
   (*n_lines)=1;
   (*wol)=0;
+  /* Get char's one by one. If the char is
+     a '\n', check if the number of white-spaces or the total
+     length of the czurrent line is longer than wol or ll,
+     and reset. */
   while((ic=getc(fl)) != EOF) {
     c=(char)ic;
     current_length++;
     if(space_or_null((int)c)) {
       current_wol++;
     }
+    putc(ic,stdout);
     if(c == '\n') {
       (*n_lines)++;
       if(current_length>(*ll)) {
@@ -64,8 +74,11 @@ void scan_n_lines_and_features(char *file,
       if(current_wol>(*wol)) {
 	(*wol)=current_wol;
       }
+      printf("currentlen=%lu, currentWOL=%lu\n",current_length,current_wol);
+      //exit(1);
       current_length=0;
       current_wol=0;
+      
     }
   }
   fclose(fl);
@@ -153,3 +166,5 @@ double sparse_dotproduct(FVECTOR *a, FVECTOR *b)
     return((double)sum);
 }
 
+
+/* eof */

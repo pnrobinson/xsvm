@@ -29,9 +29,10 @@ static int takeStep(struct svm *svm, int i1, int i2);
 #define VERBOSE 1  /* For debugging, to follow progress of training */
 
 /*************************************************************/
-
+/** C is the penalty for misclassifying an example during training. */
 static double C = 1;
 static double tolerance = 0.001;
+/** bias of the SVM */
 static double b = 0.0;
 static double eps=0.001;
 static double delta_b;
@@ -55,6 +56,9 @@ void train_model_platt(struct svm *svm)
   iter = 0;
   max_iter = svm->max_iter;
   if (max_iter < 1) max_iter = 0x7fffffff;
+
+  printf("train_model_platt, C=%f, end_support_i=%d,max_iter=%d\n",C,end_support_i,max_iter);
+
   
   do
   {
@@ -76,7 +80,7 @@ void train_model_platt(struct svm *svm)
     }
     
 #if VERBOSE
-    if (iter % MIN(100,svm->training_count) == 0){
+    if (1){ //iter % MIN(100,svm->training_count) == 0){
       fprintf(stderr,"iter=%d; number changed=%d\n",iter,num_changed);
       svm->b = b;
       calculate_diagnostics(svm);

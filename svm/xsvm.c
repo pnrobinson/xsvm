@@ -78,25 +78,18 @@ void initialize_svm(SVM *svm, GRAM_MATRIX *gram, FVECTOR **fv_list)
   svm->test_count = 0;
   svm->end_support_i = N;
   svm->kernel = dumbkernelfxn;
-  double C=1.0d;
+  double C=1.0;
+  svm->C=C;
   svm->C_neg = C;
   svm->C_pos = C;
-  svm->output_file = "out_filename.txt";
+  svm->output_file = "xsvm.out";
   int maxIter=100;
   svm->max_iter = maxIter;
-  /*
-  if ( plausibility_check(&svm) < 0 ) {
+  
+  if ( plausibility_check(svm) < 0 ) {
     fprintf(stderr,"Terminating program because of errors in SVM initialization\n");
     exit(1);
   }
-  */
-
-
-
-
-
-
-
 }
 
 
@@ -154,7 +147,7 @@ void read_training_data(char *trainfile, FVECTOR ***fvecs,
       printf("\nParsing error in line %ld!\n%s",dnum,line);
       exit(1);
     }
-    //printf("docnum=%ld: Class=%f\n",dnum,doc_label); 
+    printf("docnum=%ld: Class=%f,wpos=%ld,max_features=%ud\n",dnum,doc_label,wpos,max_features); 
     if(doc_label > 0) dpos++;
     if (doc_label < 0) dneg++;
     if (doc_label == 0) dunlab++;
@@ -167,7 +160,7 @@ void read_training_data(char *trainfile, FVECTOR ***fvecs,
       exit(1);
     }
 
-    double factor=1.0d; /* todo: implement this or remove it */
+    double factor=1.0; /* todo: implement this or remove it */
      (*fvecs)[dnum] = create_feature_vector(features,doc_label,factor);
      //printf("\nNorm=%f\n",((*docs)[dnum]->fvec)->twonorm_sq);  
      dnum++;  
@@ -185,7 +178,7 @@ void read_training_data(char *trainfile, FVECTOR ***fvecs,
     fprintf(stdout, "OK. (%ld examples read)\n", dnum);
   }
   (*n_fvecs)=dnum;
-
+  
 }
 
 /** \brief Read in one line of the training data

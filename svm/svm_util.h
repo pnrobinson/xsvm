@@ -104,7 +104,7 @@ extern void *xmalloc(size_t size);
 extern FVECTOR *create_feature_vector(FEATURE *features,double label,double factor);
 extern double sparse_dotproduct(FVECTOR *a, FVECTOR *b);
 
-//extern *tranin
+
 
 
 #endif

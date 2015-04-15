@@ -29,7 +29,7 @@ GRAM_MATRIX * initialize_gram_matrix(unsigned int n){
   }
   for (unsigned i=0;i<n;++i)
     for (unsigned j=0;j<n;++j)
-      gm->matrix[i][j]=0.0d;
+      gm->matrix[i][j]=0.0;
   return gm;
 }
 
@@ -191,65 +191,63 @@ void calculate_bound_vs_unbound_supports(struct svm *svm, int *lb, int *ub, int 
 
 int plausibility_check(struct svm *svm)
 {
-	int plausible = 1;
-	int N;
-	int i;
-	int pos;
-
-	if (svm->data == NULL) {
-		fprintf(stderr,"Error: SVM data not initialized\n");
-		plausible = -1;
-	}
-	if (svm->training_count < 2) {
-		fprintf(stderr,"Error: Not enough training exemplars (%d found).\n",
-			svm->training_count);
-		plausible = -1;
-	}
-	if (svm->test_count < 0) {
-		fprintf(stderr,"Error: Bad initiailization of test_count (%d).\n",
-		svm->test_count);
-		plausible = -1;
-	}
-	N = svm->training_count + svm->test_count;
-	if (svm->end_support_i != N)
-	{
-		fprintf(stderr,"Error: end_support_i not initiailized correctly: n_support_i: %d.\n",
-		svm->end_support_i);
-		plausible = -1;
-	}
-	for (i= 0; i<N; i++) {
-		if (svm->data_class[i] != 1 && svm->data_class[i] != -1) {
-			fprintf(stderr,"Error: Bad format for data class for item %d: %d\n",
-				i,svm->data_class[i]);
-			plausible = -1;
-		}
-	}
-
-	pos = 0;
-	for (i = 0; i<svm->training_count;++i) {
-		if (svm->data_class[i] == 1) pos++;
-	}
-	if (pos < 1) {
-		fprintf(stderr,"Error: No positive training examples found\n");
-		plausible = -1;
-	}
-	if (pos == svm->training_count) {
-		fprintf(stderr,"Error: No negative training examples found\n");
-		plausible = -1;
-	}
-
-  	if (svm->C < 0.0) {
-  		fprintf(stderr,"Error: penalty parameter C must be positive (%f)\n",
-  			svm->C);
-  		plausible = -1;
-  	}
-
-   if (svm->kernel == NULL) {
-   		fprintf(stderr,"Error: The kernel callback function was not initialized\n");
-   		plausible = -1;
-   }
-
- 
+  int plausible = 1;
+  int N;
+  int i;
+  int pos;
+  
+  if (svm->data == NULL) {
+    fprintf(stderr,"Error: SVM data not initialized\n");
+    plausible = -1;
+  }
+  if (svm->training_count < 2) {
+    fprintf(stderr,"Error: Not enough training exemplars (%d found).\n",
+    svm->training_count);
+    plausible = -1;
+  }
+  if (svm->test_count < 0) {
+    fprintf(stderr,"Error: Bad initiailization of test_count (%d).\n",
+    svm->test_count);
+    plausible = -1;
+  }
+  N = svm->training_count + svm->test_count;
+  if (svm->end_support_i != N)
+  {
+    fprintf(stderr,"Error: end_support_i not initiailized correctly: n_support_i: %d.\n",
+    svm->end_support_i);
+    plausible = -1;
+  }
+  for (i= 0; i<N; i++) {
+    if (svm->data_class[i] != 1 && svm->data_class[i] != -1) {
+      fprintf(stderr,"Error: Bad format for data class for item %d (of %d total items): class \"%d\"\n",
+      i,N,svm->data_class[i]);
+      plausible = -1;
+    }
+  }
+  
+  pos = 0;
+  for (i = 0; i<svm->training_count;++i) {
+    if (svm->data_class[i] == 1) pos++;
+  }
+  if (pos < 1) {
+    fprintf(stderr,"Error: No positive training examples found\n");
+    plausible = -1;
+  }
+  if (pos == svm->training_count) {
+    fprintf(stderr,"Error: No negative training examples found\n");
+    plausible = -1;
+  }
+  
+  if (svm->C < 0.0) {
+    fprintf(stderr,"Error: penalty parameter C must be positive (%f)\n",
+    svm->C);
+    plausible = -1;
+  }
+  
+  if (svm->kernel == NULL) {
+    fprintf(stderr,"Error: The kernel callback function was not initialized\n");
+    plausible = -1;
+  }
   return plausible;
 }
 
@@ -264,116 +262,114 @@ int plausibility_check(struct svm *svm)
 
 
 
-/* ******************************************************************
- * Count the number of errors on the training data.                 *
- * ******************************************************************/
+/** \brief Count the number of errors on the training data.               
+ * This function makes ues of the function <b>learned_func_nonlinear</b>
+ * to predict the class of an example using the SVM, and compares
+ * the sign of the answer (positive/negative) to the label of the example.
+ * It returns the total number of errors.
+ * @param svm The trained SVM
+ */
 static double training_errors(struct svm *svm)
 {
-	int n_error = 0;
-	int i;
-	int N; /* training count */
-	double *alpha;
-	alpha = svm->alpha;
-	N = svm->training_count;
-
-	for (i=0; i<svm->training_count; i++)
-	{
-		if (SIGNT(learned_func_nonlinear(svm,i,svm->b) ) != SIGNT(svm->data_class[i]) )
-			n_error++;
-	}
-	return n_error;
+  int n_error = 0;
+  int i;
+  int N; /* training count */
+  double *alpha;
+  alpha = svm->alpha;
+  N = svm->training_count;
+  
+  for (i=0; i<svm->training_count; i++){
+    if (SIGNT(learned_func_nonlinear(svm,i,svm->b) ) != SIGNT(svm->data_class[i]) )
+      n_error++;
+  }
+  return n_error;
 }
 
-/* ******************************************************************
- * Count the number of errors on the test data.                     *
- * ******************************************************************/
+/**
+ * \brief Similar to the function training_errors, but for test data.
+ */
 static double test_errors(struct svm *svm)
 {
-	int n_error, max, i;
-	int N; /* training count */
-	double *alpha;
-
-	n_error = 0;
-	alpha = svm->alpha;
-	max = svm->training_count + svm->test_count;
-	N = svm->training_count;
-
-	for (i = svm->training_count; i < max; i++)
-	{
-		if (SIGNT(learned_func_nonlinear(svm,i,svm->b) ) != SIGNT(svm->data_class[i]) )
-			n_error++;
-	}
-	return n_error;
+  int n_error, max, i;
+  int N; /* training count */
+  double *alpha;
+  
+  n_error = 0;
+  alpha = svm->alpha;
+  max = svm->training_count + svm->test_count;
+  N = svm->training_count;
+  
+  for (i = svm->training_count; i < max; i++)
+  {
+    if (SIGNT(learned_func_nonlinear(svm,i,svm->b) ) != SIGNT(svm->data_class[i]) )
+    n_error++;
+  }
+  return n_error;
 }
 
-/* ******************************************************************
- * This function can be used to monitor progress of training for    *
- * debugging purposes etc. The number of true/false positive and    *
- * negative predictions are calculated for train and test data.     *
- * ******************************************************************/
-
+/** \brief Monitor progress of training classification accuracy for debugging purposes etc. 
+* The number of true/false positive and negative predictions are 
+* calculated for train and test data.
+*/
 void calculate_diagnostics(struct svm *svm)
 {
-	int i,max,end_support_i;
-	int ntrain_err,ntrain_FP,ntrain_TP, ntrain_FN, ntrain_TN;
-	int ntest_err,ntest_FP,ntest_TP, ntest_FN, ntest_TN;
-	double *alpha;
-	double b;
-
-	alpha = svm->alpha;
-	b = svm->b;
-	end_support_i = svm->training_count;
-
-	ntrain_err = ntrain_FP = ntrain_TP =ntrain_FN = ntrain_TN = 0;
-	ntest_err = ntest_FP = ntest_TP = ntest_FN = ntest_TN = 0;
-
-	/* CALCULATE TRAINING ERROR */
-	for (i=0; i<svm->training_count; i++)
-		{
-
-			if (SIGNT(learned_func_nonlinear(svm,i,b)) != SIGNT(svm->data_class[i])) {
-				ntrain_err++;
-				if (SIGNT(svm->data_class[i]) == 1)
-					ntrain_FN++;
-				else
-					ntrain_FP++;
-			} else { /* i.e., correct prediction */
-				if (SIGNT(svm->data_class[i]) == 1)
-					ntrain_TP++;
-				else
-					ntrain_TN++;
-			}
-		}
-	/* CALCULATE TEST ERROR */
-	max = svm->training_count + svm->test_count;
-
-	for (i = svm->training_count; i < max; i++)
-		{
-			if ((learned_func_nonlinear(svm,i,b) > 0) != (svm->data_class[i] > 0)) {
-				ntest_err++;
-				if (SIGNT(svm->data_class[i]) == 1)
-					ntest_FN++;
-				else
-					ntest_FP++;
-			} else { /* i.e., correct prediction */
-			if (SIGNT(svm->data_class[i]) == 1)
-				ntest_TP++;
-			else
-				ntest_TN++;
-			}
-		}
-	svm->train_FP = ntrain_FP;
-	svm->train_FN = ntrain_FN;
-	svm->train_TP = ntrain_TP;
-	svm->train_TN = ntrain_TN;
-	svm->test_FN = ntest_FN;
-	svm->test_FP = ntest_FP;
-	svm->test_TP = ntest_TP;
-	svm->test_TN = ntest_TN;
-	svm->training_err_count = ntrain_err;
-	svm->test_err_count = ntest_err;
-
-
+  int i,max,end_support_i;
+  int ntrain_err,ntrain_FP,ntrain_TP, ntrain_FN, ntrain_TN;
+  int ntest_err,ntest_FP,ntest_TP, ntest_FN, ntest_TN;
+  double *alpha;
+  double b;
+  
+  alpha = svm->alpha;
+  b = svm->b;
+  end_support_i = svm->training_count;
+  
+  ntrain_err = ntrain_FP = ntrain_TP =ntrain_FN = ntrain_TN = 0;
+  ntest_err = ntest_FP = ntest_TP = ntest_FN = ntest_TN = 0;
+  
+  /* CALCULATE TRAINING ERROR */
+  for (i=0; i<svm->training_count; i++)
+  {
+    if (SIGNT(learned_func_nonlinear(svm,i,b)) != SIGNT(svm->data_class[i])) {
+      ntrain_err++;
+      if (SIGNT(svm->data_class[i]) == 1)
+      ntrain_FN++;
+      else
+      ntrain_FP++;
+    } else { /* i.e., correct prediction */
+      if (SIGNT(svm->data_class[i]) == 1)
+      ntrain_TP++;
+      else
+      ntrain_TN++;
+    }
+  }
+  /* CALCULATE TEST ERROR */
+  max = svm->training_count + svm->test_count;
+  
+  for (i = svm->training_count; i < max; i++)
+  {
+    if ((learned_func_nonlinear(svm,i,b) > 0) != (svm->data_class[i] > 0)) {
+      ntest_err++;
+      if (SIGNT(svm->data_class[i]) == 1)
+      ntest_FN++;
+      else
+      ntest_FP++;
+    } else { /* i.e., correct prediction */
+      if (SIGNT(svm->data_class[i]) == 1)
+      ntest_TP++;
+      else
+      ntest_TN++;
+    }
+  }
+  svm->train_FP = ntrain_FP;
+  svm->train_FN = ntrain_FN;
+  svm->train_TP = ntrain_TP;
+  svm->train_TN = ntrain_TN;
+  svm->test_FN = ntest_FN;
+  svm->test_FP = ntest_FP;
+  svm->test_TP = ntest_TP;
+  svm->test_TN = ntest_TN;
+  svm->training_err_count = ntrain_err;
+  svm->test_err_count = ntest_err;
 }
 
 /* ******************************************************************
@@ -384,50 +380,50 @@ void calculate_diagnostics(struct svm *svm)
  * ******************************************************************/
 void output_bound_vs_unbound_supports(struct svm *svm, FILE* fp)
 {
-	int non_bound_support = 0;
-	int bound_support = 0;
-	int non_support_vector = 0;
-	/* call function from svm.c, maybe refactor this all... */
-	calculate_bound_vs_unbound_supports(svm, &non_support_vector,
-		&bound_support,&non_bound_support);
-	fprintf(fp,"bound_support=%d, non_bound_support=%d, non_sv=%d",bound_support,non_bound_support,non_support_vector);
+  int non_bound_support = 0;
+  int bound_support = 0;
+  int non_support_vector = 0;
+  /* call function from svm.c, maybe refactor this all... */
+  calculate_bound_vs_unbound_supports(svm, &non_support_vector,
+  &bound_support,&non_bound_support);
+  fprintf(fp,"bound_support=%d, non_bound_support=%d, non_sv=%d",bound_support,non_bound_support,non_support_vector);
 }
 
 void smo_print_results_to_log(struct svm *svm, FILE *fp)
 {
-	calculate_diagnostics(svm);
-	fprintf(fp,"train_err: %d/%d (TP:%d, TN:%d, FP:%d,FN:%d) test_err: %d/%d (TP:%d, TN:%d, FP:%d,FN:%d)",
-				svm->training_err_count,svm->training_count,svm->train_TP,svm->train_TN,svm->train_FP,svm->train_FN,
-				svm->test_err_count,svm->test_count,svm->test_TP,svm->test_TN,svm->test_FP,svm->test_FN);
-	fprintf(fp,"[");
-	output_bound_vs_unbound_supports(svm, fp);
-	fprintf(fp,"]\n");
+  calculate_diagnostics(svm);
+  fprintf(fp,"train_err: %d/%d (TP:%d, TN:%d, FP:%d,FN:%d) test_err: %d/%d (TP:%d, TN:%d, FP:%d,FN:%d)",
+  svm->training_err_count,svm->training_count,svm->train_TP,svm->train_TN,svm->train_FP,svm->train_FN,
+  svm->test_err_count,svm->test_count,svm->test_TP,svm->test_TN,svm->test_FP,svm->test_FN);
+  fprintf(fp,"[");
+    output_bound_vs_unbound_supports(svm, fp);
+    fprintf(fp,"]\n");
 }
 
 void debug_svm_struct(struct svm *svm)
 {
-	int i,k, npostrain,npostest,ntotal;
-	int nnegtrain = 0;
-	int nnegtest = 0;
-	npostrain = npostest = ntotal = 0;
-		for (k=0;k<svm->training_count;++k) {
-		printf("TRAIN: %d: class = %d\n",k,svm->data_class[k]);
-	}
-	for ( ; k < svm->training_count + svm->test_count;  ++k) {
-		printf("TEST: %d: class = %d\n",k,svm->data_class[k]);
-	}
-	for (i = 0; i < svm->training_count;  ++i) {
-		ntotal++;
-		if (svm->data_class[i] > 0) npostrain++; else nnegtrain++;
-	}
-	for ( ; i < svm->training_count + svm->test_count;  ++i) {
-		ntotal++;
-		if (svm->data_class[i] > 0) npostest++; else nnegtest++;
-	}
-	printf("Total: %d, pos train %d, neg train %d pos test %d neg test %d \n",ntotal,npostrain,nnegtrain,
-				 nnegtest,npostest);
-	printf("Ntrain %d, ntest %d\n",svm->training_count,svm->test_count);
-
+  int i,k, npostrain,npostest,ntotal;
+  int nnegtrain = 0;
+  int nnegtest = 0;
+  npostrain = npostest = ntotal = 0;
+  for (k=0;k<svm->training_count;++k) {
+    printf("TRAIN: %d: class = %d\n",k,svm->data_class[k]);
+  }
+  for ( ; k < svm->training_count + svm->test_count;  ++k) {
+    printf("TEST: %d: class = %d\n",k,svm->data_class[k]);
+  }
+  for (i = 0; i < svm->training_count;  ++i) {
+    ntotal++;
+    if (svm->data_class[i] > 0) npostrain++; else nnegtrain++;
+  }
+  for ( ; i < svm->training_count + svm->test_count;  ++i) {
+    ntotal++;
+    if (svm->data_class[i] > 0) npostest++; else nnegtest++;
+  }
+  printf("Total: %d, pos train %d, neg train %d pos test %d neg test %d \n",ntotal,npostrain,nnegtrain,
+  nnegtest,npostest);
+  printf("Ntrain %d, ntest %d\n",svm->training_count,svm->test_count);
+  
 }
 
 
@@ -446,7 +442,7 @@ void svm_train(struct svm *svm, enum optimization opt)
   int k;
   int verbose=2;
   if (verbose>=1) {
-    printf("Training SVM...\n");
+    printf("Training SVM...[kernel:%s]\n",opt==PLATT?"platt":"feng");
   }
   
   /* Allocate memory for alphas and error cache */
