@@ -41,7 +41,13 @@ static int end_support_i = -1;
 
 /**
  * \brief Optimize the SVM using the Sequential Minimal Optimization scheme.
- * This is the only public function in this module 
+ * This is the only public function in this module. THere is a loop over all 
+ * examples (0..[training_count-1]) to start the loop. Then, only those
+ * examples are examine that are unbound, i.e., 0 < alpha < C. If we do not
+ * change any example in a loop like this, then we again go through all examples.
+ * Only if then, no further examples are changed do we terminate. We can also terminate
+ * the loop if we reach max_iter.
+ * @param svm The svn data structure containg the Gram matrix and various parameters.
  */
 void train_model_platt(struct svm *svm)
 {
@@ -56,23 +62,16 @@ void train_model_platt(struct svm *svm)
   iter = 0;
   max_iter = svm->max_iter;
   if (max_iter < 1) max_iter = 0x7fffffff;
-
-  printf("train_model_platt, C=%f, end_support_i=%d,max_iter=%d\n",C,end_support_i,max_iter);
-
-  
   do
   {
     num_changed = 0;
     
-    if (examine_all)
-    {
+    if (examine_all){
       for (k = 0; k < svm->training_count; k++)
 	num_changed += smo_examine_example(svm,k);
       examine_all = 0;
-    } else
-    {
-      for (k = 0; k < svm->training_count; k++)
-      {
+    } else {
+      for (k = 0; k < svm->training_count; k++){
 	if (svm->alpha[k] != 0 && svm->alpha[k] != C)
 	  num_changed += smo_examine_example(svm, k);
       }
@@ -80,7 +79,7 @@ void train_model_platt(struct svm *svm)
     }
     
 #if VERBOSE
-    if (1){ //iter % MIN(100,svm->training_count) == 0){
+    if (iter % MIN(100,svm->training_count) == 0){
       fprintf(stderr,"iter=%d; number changed=%d\n",iter,num_changed);
       svm->b = b;
       calculate_diagnostics(svm);
@@ -101,6 +100,8 @@ void train_model_platt(struct svm *svm)
 /**
  * \brief Examine a single example.
  * TODO better documentaiton
+ * @param svm the SVM model with the Gram matrix and other parameters
+ * @param i1 The index of the example to be examined (index in the Gram matrix)
  **/
 static int smo_examine_example(struct svm *svm, int i1)
 {
@@ -112,7 +113,7 @@ static int smo_examine_example(struct svm *svm, int i1)
   alph1 = alph[i1];
   
   if (alph1 > 0 && alph1 < C)
-    E1 = error_cache[i1];
+    E1 = error_cache[i1];/* unbound SV */
   else
     E1 = learned_func_nonlinear(svm,i1,b) - y1;
   

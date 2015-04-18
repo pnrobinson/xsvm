@@ -19,7 +19,10 @@
 //#include "fan.h"
 
 
-
+/**
+ * \brief allocate memory for an initiaze the gram matrix
+ * @param n The number of examples in the Gram matrix.
+ */
 GRAM_MATRIX * initialize_gram_matrix(unsigned int n){
   GRAM_MATRIX *gm = (GRAM_MATRIX*)xmalloc(sizeof(GRAM_MATRIX));
   gm->n = n;
@@ -88,11 +91,16 @@ double kernel_function(KERNEL_PARAM *k_params, FVECTOR *a, FVECTOR *b)
 /**
  * This function calculates the kernel evaluation for
  * example k.In this code, we assume that the training
- and test data are entered into one large Gram matrix.
- Therefore, we can evaluate the kernel for example k
- against all training exemplars (or the support vectors
- resulting from training) for test exemplars or training
- exemplars using this function.
+ * and test data are entered into one large Gram matrix.
+ * Therefore, we can evaluate the kernel for example k
+ * against all training exemplars (or the support vectors
+ * resulting from training) for test exemplars or training
+ * exemplars using this function.
+ * <p>
+ * TODO: This should be restricted to training. 
+ * @param svm The SVM model with Gram matrix and other parameters
+ * @param k The index of the example to be classified by the SVM (should be an index of the Gram matrix for training)
+ * @param b The bias term of the SVM.
  */
 double learned_func_nonlinear(struct svm *svm, int k, double b)
 {
