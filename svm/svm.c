@@ -16,7 +16,7 @@
 #include "svm.h"
 #include "svm_util.h"
 #include "platt.h"
-//#include "fan.h"
+#include "fan.h"
 
 
 /**
@@ -113,19 +113,17 @@ double learned_func_nonlinear(struct svm *svm, int k, double b)
   alph = svm->alpha;
   N = svm->training_count;
 
-  for (i = 0; i < N; i++)
-    {
-      if (alph[i] > 0)
-	{
-	  s += alph[i] * svm->data_class[i] * svm->kernel(i, k, svm);
-	}
+  for (i = 0; i < N; i++){
+    if (alph[i] > 0){
+      s += alph[i] * svm->data_class[i] * svm->kernel(i, k, svm);
     }
+  }
   s -= b;
   return s;
 }
 
 
-/** \brief This function calculated the objective of the dual. */
+/** \brief This function calculates the objective of the dual. */
 double objective_function(struct svm *svm)
 {
   int i,j;
@@ -160,11 +158,14 @@ double objective_function(struct svm *svm)
 /** \brief This function counts the number of lower bound (alpha = 0), upper
  * bound (alpha = c) and unbound (0<alpha<C) support vectors.      
  */
-void calculate_bound_vs_unbound_supports(struct svm *svm, int *lb, int *ub, int *unb_sv)
+void calculate_bound_vs_unbound_supports(struct svm *svm)
 {
   int lower_bound = 0; /* alpha = 0, non-support vector */
   int upper_bound = 0; /* alpha = C, misclassified */
   int unbound_sv = 0; /* 0 < alpha < C */
+
+
+
   
   int i;
   double C;
@@ -182,10 +183,10 @@ void calculate_bound_vs_unbound_supports(struct svm *svm, int *lb, int *ub, int 
       lower_bound++;
     }
   }
-  *lb = lower_bound;
-  *ub = upper_bound;
-  *unb_sv = unbound_sv;
   
+  svm->bound_sv=upper_bound; /* Bound support vector count (i.e., alpha=C) */
+  svm->unbound_sv=unbound_sv; /* Unbound support vector count (i.e., 0<alpha<C) */
+  svm->non_sv=lower_bound; /* Non-support vector count (i.e., alpha=0). */
   /*
     fprintf(stderr,"bound_support=%d, non_bound_support=%d, non_sv=%d",
     upper_bound,unbound_sv,lower_bound);
@@ -392,9 +393,8 @@ void output_bound_vs_unbound_supports(struct svm *svm, FILE* fp)
   int bound_support = 0;
   int non_support_vector = 0;
   /* call function from svm.c, maybe refactor this all... */
-  calculate_bound_vs_unbound_supports(svm, &non_support_vector,
-  &bound_support,&non_bound_support);
-  fprintf(fp,"bound_support=%d, non_bound_support=%d, non_sv=%d",bound_support,non_bound_support,non_support_vector);
+  calculate_bound_vs_unbound_supports(svm);
+  fprintf(fp,"bound_support=%d, non_bound_support=%d, non_sv=%d",svm->bound_sv,svm->unbound_sv,svm->non_sv);
 }
 
 void smo_print_results_to_log(struct svm *svm, FILE *fp)
@@ -408,6 +408,7 @@ void smo_print_results_to_log(struct svm *svm, FILE *fp)
     fprintf(fp,"]\n");
 }
 
+/** \brief Print a summary of the status of the SVM model for debugging/development purposes. */
 void debug_svm_struct(struct svm *svm)
 {
   int i,k, npostrain,npostest,ntotal;
@@ -434,7 +435,7 @@ void debug_svm_struct(struct svm *svm)
   
 }
 
-
+/** \brief Deallocate memory */
 void free_svm(struct svm *svm){
   free(svm->alpha);
   free(svm->error_cache);
@@ -450,7 +451,7 @@ void svm_train(struct svm *svm, enum optimization opt)
   int k;
   int verbose=2;
   if (verbose>=1) {
-    printf("Training SVM...[kernel:%s]\n",opt==PLATT?"platt":"feng");
+    printf("Training SVM...[kernel:%s]\n",opt==PLATT?"platt":"fan");
   }
   
   /* Allocate memory for alphas and error cache */
@@ -476,8 +477,7 @@ void svm_train(struct svm *svm, enum optimization opt)
     train_model_platt(svm);
     break;
   case FAN:
-    //train_model_fan(svm);
-    printf("FAN needs to be imported"); exit(1);
+    train_model_fan(svm);
     break;
   default:
     fprintf(stderr,"Optimization method %d not recognized.\n",opt);
@@ -516,3 +516,31 @@ void svm_train(struct svm *svm, enum optimization opt)
   return;
 }
 
+
+
+void svm_output_message(struct svm *svm){
+  unsigned misclassified, correctly_classified,tot;
+  unsigned int i;
+  calculate_bound_vs_unbound_supports(svm);
+  for (i=0; i<svm->training_count; i++)
+  {
+    if (SIGNT(learned_func_nonlinear(svm,i,svm->b)) != SIGNT(svm->data_class[i])) {
+      misclassified++;
+    } else {
+      correctly_classified++;
+    }
+  }
+  
+  printf("Optimization completed (%d misclassified [%.2f%%], %d correctly classified [%.2f%%])\n",
+	 misclassified,(100.0*misclassified/svm->training_count),
+	 correctly_classified,(100.0*correctly_classified/svm->training_count));
+  printf("Number of SV: %d (including %d at upper bound); number of non-sv: %d\n",
+	 svm->bound_sv+svm->unbound_sv,svm->bound_sv,svm->non_sv);
+  printf("L1 loss TODO\n");
+  printf("L1 loss TODO\n");
+  printf("Norm of weight vector: |w|=TODO\n");
+  printf("Norm of longest example vector: |x|=TODO\n");
+
+
+
+}

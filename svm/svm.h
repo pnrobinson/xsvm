@@ -82,19 +82,22 @@ typedef struct svm
   int test_FN;
   int test_TP;
   int test_TN;
+  unsigned int bound_sv; /**> Bound support vector count (i.e., alpha=C) */
+  unsigned int unbound_sv; /**> Unbound support vector count (i.e., 0<alpha<C) */
+  unsigned int non_sv; /**> Non-support vector count (i.e., alpha=0). */
 } SVM;
 
 #define GET_C(svm,idx) ( (svm->data_class[idx] > 0 ? svm->C_pos : svm->C_neg) )
 
 double learned_func_nonlinear(struct svm *svm, int k, double b);
 double objective_function(struct svm *svm);
-void calculate_bound_vs_unbound_supports(struct svm *svm, int *lb, int *ub, int *unb_sv);
+void calculate_bound_vs_unbound_supports(struct svm *svm);
 int plausibility_check(struct svm *svm);
 void free_svm(struct svm *svm);
 /** The two algorithms for solving the SVM */
 enum optimization { PLATT, FAN};
 
-void smo_train(struct svm *svm, enum optimization opt);
+//void smo_train(struct svm *svm, enum optimization opt);
 
 void smo_print_results_to_log(struct svm *svm, FILE *fp);
 
@@ -114,8 +117,8 @@ void svm_train(struct svm *svm, enum optimization opt);
 
 double learned_func_nonlinear(struct svm *svm, int k, double b);
 double objective_function(struct svm *svm);
-void calculate_bound_vs_unbound_supports(struct svm *svm, int *lb, int *ub, int *unb_sv);
 int plausibility_check(struct svm *svm);
+void svm_output_message(struct svm *svm);
 void free_svm(struct svm *svm);
 
 #endif /* SVM_H_ */

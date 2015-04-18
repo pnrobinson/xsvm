@@ -30,6 +30,11 @@ int parse_line(char *line, FEATURE *features, double *label,
 	       long int *n_features, long int max_words_doc);
 void initialize_svm(SVM *svm, GRAM_MATRIX *gram, FVECTOR **fv_list);
 
+/** Determined wheter the optimization will be performed using the Fan algorithm (default)
+ * or the SMO algorithm of Platt).
+ */
+enum optimization opt_type=FAN;
+
 int main(int argc,char ** argv) {
   FVECTOR **feature_vector_list; /* the training data */
   unsigned long total_features;
@@ -46,8 +51,10 @@ int main(int argc,char ** argv) {
   gram = calculate_gram_matrix(total_feature_vectors,feature_vector_list,&kernel_parameters);
   
   initialize_svm(&svm, gram, feature_vector_list);
-  enum optimization opt_type=PLATT;
+  
   svm_train(&svm,opt_type);
+
+  svm_output_message(&svm);
 
   return 0;
 }
@@ -147,7 +154,7 @@ void read_training_data(char *trainfile, FVECTOR ***fvecs,
       printf("\nParsing error in line %ld!\n%s",dnum,line);
       exit(1);
     }
-    printf("docnum=%ld: Class=%f,wpos=%ld,max_features=%ud\n",dnum,doc_label,wpos,max_features); 
+    //printf("docnum=%ld: Class=%f,wpos=%ld,max_features=%ud\n",dnum,doc_label,wpos,max_features); 
     if(doc_label > 0) dpos++;
     if (doc_label < 0) dneg++;
     if (doc_label == 0) dunlab++;
@@ -287,6 +294,12 @@ void input_arguments(int argc,char *argv[],
     switch ((argv[i])[1]) {
     case '?': print_help(); exit(0);
     case 'v': i++; (*verbosity)=atol(argv[i]); break;
+    case 'o': /* default is Fan, so only change if user enters Platt */
+      i++;
+      const char *opt=argv[i];
+      if (!strcmp(opt,"Platt"))
+	opt_type=PLATT;
+      break;
     default: printf("did not recognize flag %s\n",argv[i]); 
       print_help(); 
       exit(0);
@@ -309,6 +322,17 @@ void input_arguments(int argc,char *argv[],
 
 
 void print_help(void) {
- printf("\nxsvm %s: Support Vector Machine learning and classification     %s\n",VERSION,VERSION_DATE);
+ printf("\nxsvm %s: Support Vector Machine learning and classification     %s\n\n",VERSION,VERSION_DATE);
+ printf("Author: Peter N Robinson, peter.robinson@charite.de\n\n");
+ printf("License: BSD2\n\n");
+ printf("\tusage: xsvm [options] file\n\n");
+ printf("Argument: file contains the training data or the test data \n");
+ printf("\tif the flag -m (model) is set, the argument will be interpreted as test data\n");
+ printf("General options:\n");
+ printf("\t-?\t->Show help message\n");
+ printf("\t-v [0..3]\t-> verbosity level (default 1)\n");
+ printf("Learning options:\n");
+ printf("\t-o [Fan|Platt]\t->Optimization  (default: Fan)\n");
+
   
 }

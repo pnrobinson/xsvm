@@ -16,15 +16,9 @@
 
 #include "svm_util.h"
 
-
+/** Verbosity level for output */
 int verbosity;
 
-/* prototypes */
-
-/*
-void input_training_data(const char *path, FVECTOR ***fvec_list, unsigned long *total_features, long int *total_fvecs) {
-
-}*/
 
 /** \brief Scan file to prepare for data input.
  *
@@ -74,8 +68,7 @@ void scan_n_lines_and_features(char *file,
       if(current_wol>(*wol)) {
 	(*wol)=current_wol;
       }
-      printf("currentlen=%lu, currentWOL=%lu\n",current_length,current_wol);
-      //exit(1);
+      //printf("currentlen=%lu, currentWOL=%lu\n",current_length,current_wol);
       current_length=0;
       current_wol=0;
       

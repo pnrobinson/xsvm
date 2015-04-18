@@ -1,11 +1,12 @@
-CFLAGS = -g -O3
+CFLAGS = -g -O3 -std=gnu99
+## Note the -stdgnu99 uses c99 with gnu extensions (gets us drand48)
 LDLIBS= 
 LDFLAGS=-lm 
-CC=c99
+CC=gcc
 
 all: xsvm
 
-OBJ = svm_util.o svm.o platt.o
+OBJ = svm_util.o svm.o platt.o fan.o
 
 xsvm: xsvm.c $(OBJ)
 	$(CC) -o $@ xsvm.c $(OBJ) $(CFLAGS) $(LDFLAGS)
