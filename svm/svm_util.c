@@ -160,4 +160,93 @@ double sparse_dotproduct(FVECTOR *a, FVECTOR *b)
 }
 
 
+/** \brief Read in one line of the training data
+ * Note that we use the format of libSVM.
+ * For example, <b>1 1:2 2:1 # your comments</b>
+ * Note that for now comments are ignored
+ *
+ * @param line The input line
+ * @param features This is a vector that will be filled with the results of parsing
+ * @param label one of +1.0 or -1.0
+ * @param n_features This will be filled with the number of features
+ * @param max_features The maximum features a line can have
+ * @return 0 on failure, 1 if we successfully parse a FEATURE vector
+ */
+int parse_line(char *line, FEATURE *features, double *label,
+	       long int *n_features, long int max_features)
+{
+  register int pos; /* keep track of position in line */
+  register long wpos;
+  long wnum;
+  double weight;
+  int numread;
+  char featurepair[1000],junk[1000];
+
+  printf("%s",line);
+
+  pos=0;
+  while(line[pos] ) {      /* cut off comments */
+    if((line[pos] == '#')) {
+      line[pos]=0;
+      break; 
+    }
+    if(line[pos] == '\n') { /* strip the CR */
+      line[pos]=0;
+    }
+    pos++;
+  }
+  wpos=0;
+  /* check, that line starts with target value or zero, but not with
+   * feature pair. The following reads characters until a whitespace is found, and puts
+   * the result in a null-terminated string in 'featurepar'*/
+  if(sscanf(line,"%s",featurepair) == EOF) return(0);
+  pos=0;
+  while((featurepair[pos] != ':') && featurepair[pos]) pos++;
+  if(featurepair[pos] == ':') {
+    perror ("Line must start with label or 0 (training data file)\n"); 
+    printf("LINE: %s\n",line);
+    exit (1); 
+  }
+  /* read the target value. The following puts the label into 'label' */
+  if(sscanf(line,"%lf",label) == EOF) return(0);
+  pos=0;
+  while(space_or_null((int)line[pos])) pos++;
+  while((!space_or_null((int)line[pos])) && line[pos]) pos++;
+  while(((numread=sscanf(line+pos,"%s",featurepair)) != EOF) && 
+	(numread > 0) && 
+	(wpos<max_features)) {
+    /* printf("%s\n",featurepair); */
+    while(space_or_null((int)line[pos])) pos++;
+    while((!space_or_null((int)line[pos])) && line[pos]) pos++;
+    
+    if(sscanf(featurepair,"%ld:%lf%s",&wnum,&weight,junk)==2) {
+      /* it is a regular feature */
+      if(wnum<=0) { 
+	perror ("Feature numbers must be larger or equal to 1!!!\n"); 
+	printf("LINE: %s\n",line);
+	exit (1); 
+      }
+      if((wpos>0) && ((features[wpos-1]).fnum >= wnum)) { 
+	perror ("Features must be in increasing order!!!\n"); 
+	printf("LINE: %s\n",line);
+	exit (1); 
+      }
+      (features[wpos]).fnum=wnum;
+      (features[wpos]).fval=(float)weight; 
+      wpos++;
+    }
+    else {
+      perror ("Cannot parse feature/value pair!!!\n"); 
+      printf("'%s' in LINE: %s\n",featurepair,line);
+      exit (1); 
+    }
+  }
+  (features[wpos]).fnum=0;
+  (*n_features)=wpos+1;
+  return(1);
+}
+
+
+
+
 /* eof */

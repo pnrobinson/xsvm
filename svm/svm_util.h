@@ -103,7 +103,8 @@ extern int space_or_null(int c);
 extern void *xmalloc(size_t size);
 extern FVECTOR *create_feature_vector(FEATURE *features,double label,double factor);
 extern double sparse_dotproduct(FVECTOR *a, FVECTOR *b);
-
+extern int parse_line(char *line, FEATURE *features, double *label,
+		      long int *n_features, long int max_features);
 
 
 

@@ -97,8 +97,6 @@ void free_svm(struct svm *svm);
 /** The two algorithms for solving the SVM */
 enum optimization { PLATT, FAN};
 
-//void smo_train(struct svm *svm, enum optimization opt);
-
 void smo_print_results_to_log(struct svm *svm, FILE *fp);
 
 /* The following is used by platt.h and for debugging/verbose */
