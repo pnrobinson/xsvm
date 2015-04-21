@@ -176,14 +176,11 @@ int parse_line(char *line, FEATURE *features, double *label,
 	       long int *n_features, long int max_features)
 {
   register int pos; /* keep track of position in line */
-  register long wpos;
+  register long wpos; /* 'word position, the index of the current feature (word) */
   long wnum;
   double weight;
   int numread;
   char featurepair[1000],junk[1000];
-
-  printf("%s",line);
-
   pos=0;
   while(line[pos] ) {      /* cut off comments */
     if((line[pos] == '#')) {
@@ -203,7 +200,7 @@ int parse_line(char *line, FEATURE *features, double *label,
   pos=0;
   while((featurepair[pos] != ':') && featurepair[pos]) pos++;
   if(featurepair[pos] == ':') {
-    perror ("Line must start with label or 0 (training data file)\n"); 
+    printf("[%s:%d] Line must start with label or 0 (training data file)\n",__FILE__,__LINE__); 
     printf("LINE: %s\n",line);
     exit (1); 
   }
@@ -212,17 +209,19 @@ int parse_line(char *line, FEATURE *features, double *label,
   pos=0;
   while(space_or_null((int)line[pos])) pos++;
   while((!space_or_null((int)line[pos])) && line[pos]) pos++;
+  /** The following reads the text up to the next whitespace into 'featurepair' */
   while(((numread=sscanf(line+pos,"%s",featurepair)) != EOF) && 
 	(numread > 0) && 
 	(wpos<max_features)) {
     /* printf("%s\n",featurepair); */
+    /* The following advances pos until after the current 'featurepair' */
     while(space_or_null((int)line[pos])) pos++;
     while((!space_or_null((int)line[pos])) && line[pos]) pos++;
     
     if(sscanf(featurepair,"%ld:%lf%s",&wnum,&weight,junk)==2) {
       /* it is a regular feature */
       if(wnum<=0) { 
-	perror ("Feature numbers must be larger or equal to 1!!!\n"); 
+	printf("[%s:%d] Feature numbers must be larger or equal to 1!!!\n",__FILE__,__LINE__); 
 	printf("LINE: %s\n",line);
 	exit (1); 
       }
@@ -242,7 +241,7 @@ int parse_line(char *line, FEATURE *features, double *label,
     }
   }
   (features[wpos]).fnum=0;
-  (*n_features)=wpos+1;
+  (*n_features)=wpos;
   return(1);
 }
 
