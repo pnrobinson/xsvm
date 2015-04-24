@@ -246,6 +246,21 @@ int parse_line(char *line, FEATURE *features, double *label,
 }
 
 
+/**
+ * Output the contents of a feature vector to stdout for debugging purposes.
+ */
+extern void print_fvector(FVECTOR *fv){
+  printf("feature vector %u\n",fv->id);
+  FEATURE *f=fv->features;
+  while(f!=NULL && f->fnum != 0) {
+    printf("%u:%.1f ",f->fnum,f->fval);
+    f++;
+  }
+  printf("\n");
+  printf("class: %.1f\n",fv->data_class);
+}
+
+
 
 
 /* eof */
